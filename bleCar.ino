@@ -48,32 +48,36 @@ BLEService ledService("19B10010-E8F2-537E-4F6C-D104768A1214"); // create service
 
 
 // create switch characteristic and allow remote device to read and write
-BLECharCharacteristic ledCharacteristic("19B10011-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+BLECharCharacteristic dirCharacteristic("19B10011-E8F2-537E-4F6C-D104768A1214", BLERead | BLEWrite);
+BLECharCharacteristic speedCharacteristic("19B10011-E8F2-537E-4F6C-D104768A1215", BLERead | BLEWrite);
 // create button characteristic and allow remote device to get notifications
-BLECharCharacteristic buttonCharacteristic("19B10012-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify); // allows remote device to get notifications
+BLECharCharacteristic sensorCharacteristic("19B10012-E8F2-537E-4F6C-D104768A1216", BLERead | BLENotify); // allows remote device to get notifications
 
 void setup() {
   Serial.begin(9600);
   pinMode(ledPin, OUTPUT); // use the LED on pin 13 as an output
+  digitalWrite(ledPin,HIGH);
   pinMode(buttonPin, INPUT); // use button pin 4 as an input
   for(int i=8;i<12;i++)
    pinMode(i,OUTPUT);
   // set the local name peripheral advertises
-  blePeripheral.setLocalName("ButtonLED");
+  blePeripheral.setLocalName("bleCar");
   // set the UUID for the service this peripheral advertises:
   blePeripheral.setAdvertisedServiceUuid(ledService.uuid());
 
   // add service and characteristics
   blePeripheral.addAttribute(ledService);
-  blePeripheral.addAttribute(ledCharacteristic);
-  blePeripheral.addAttribute(buttonCharacteristic);
+  blePeripheral.addAttribute(dirCharacteristic);
+  blePeripheral.addAttribute(speedCharacteristic);
+  blePeripheral.addAttribute(sensorCharacteristic);
 
-  ledCharacteristic.setValue(0);
-  buttonCharacteristic.setValue(0);
+  dirCharacteristic.setValue(0);
+  speedCharacteristic.setValue(0);
+  sensorCharacteristic.setValue(0);
 
   // advertise the service
   blePeripheral.begin();
-
+  digitalWrite(ledPin,LOW);
   Serial.println("Bluetooth device active, waiting for connections...");
 }
 
@@ -118,6 +122,7 @@ void setDirection(Dir d) {
 
 int btnVal = 0;
 int cnt = 0;
+int speedVal = 0;
 void loop() {
   // poll peripheral
   blePeripheral.poll();
@@ -130,17 +135,22 @@ void loop() {
   char buttonValue = btnVal;
 
   // has the value changed since the last read
-  boolean buttonChanged = (buttonCharacteristic.value() != buttonValue);
+  boolean buttonChanged = (sensorCharacteristic.value() != buttonValue);
 
   if (buttonChanged) {
     // button state changed, update characteristics
-    //ledCharacteristic.setValue(buttonValue);
-    buttonCharacteristic.setValue(buttonValue);
+    //dirCharacteristic.setValue(buttonValue);
+    sensorCharacteristic.setValue(buttonValue);
   }
 
-  if (ledCharacteristic.written()) {
+  if(speedCharacteristic.written()) {
+     int val = speedCharacteristic.value();
+     Serial.println("setting speed to " + String(val));
+  }
+  
+  if (dirCharacteristic.written()) {
     // update LED, either central has written to characteristic or button state has changed
-    int val = ledCharacteristic.value();
+    int val = dirCharacteristic.value();
     Serial.println("got value " + String(val));
     if(val)
      digitalWrite(ledPin, HIGH);
@@ -166,8 +176,8 @@ void loop() {
 
   }
     setDirection(d);
-    /*if (ledCharacteristic.value()) {
-      Serial.println("got value " + ledCharacteristic.value());
+    /*if (dirCharacteristic.value()) {
+      Serial.println("got value " + dirCharacteristic.value());
       digitalWrite(ledPin, HIGH);
     } else {
       Serial.println("LED off");

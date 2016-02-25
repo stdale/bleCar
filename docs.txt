@@ -1,0 +1,16 @@
+19B10011-E8F2-537E-4F6C-D104768A1214 service is for sending direction command
+supports read / write
+0x00 stop
+0x01 forward
+0x02 backward
+0x03 left
+0x04 right
+
+19B10011-E8F2-537E-4F6C-D104768A1215 service is for speed at which car should run
+supports read / write
+accepts values 0 - 100
+
+19B10012-E8F2-537E-4F6C-D104768A1216 service is for gettings sensor values of car
+supports read / notify
+
+BLE name is "bleCar"
